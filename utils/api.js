@@ -11,14 +11,8 @@ import {
 } from "ramda";
 import { fetchJSON } from "./fetching";
 
-function store() {
-  var params = {
-    filters: [],
-    sort: "stars",
-    order: "desc",
-    perPage: 10,
-    page: 1
-  };
+function store({ ...data }) {
+  var params = { ...data };
 
   return {
     getAll() {
@@ -33,8 +27,16 @@ function store() {
   };
 }
 
-function githubQueryBuilder(category) {
-  const { getAll, getParam, setParams } = store();
+function githubSearch(category) {
+  const { getAll, getParam, setParams } = store({
+    filters: [],
+    sort: "stars",
+    order: "desc",
+    perPage: 10,
+    page: 1
+  });
+  const returnBuilder = () => builder;
+  const setter = (field) => compose(returnBuilder, setParams, objOf(field));
 
   const getGithubSearch = pipe(
     () =>
@@ -46,13 +48,12 @@ function githubQueryBuilder(category) {
     concat(`https://api.github.com/search/${category}`),
     fetchJSON({ items: [] })
   );
+
   const setFilters = pipe(
     (newParams) => getParam("filters").concat(newParams),
     objOf("filters"),
     setParams
   );
-  const setter = (field) => compose(returnBuilder, setParams, objOf(field));
-  const returnBuilder = () => builder;
 
   const updateQuery = compose(returnBuilder, setFilters);
 
@@ -70,10 +71,35 @@ function githubQueryBuilder(category) {
   return builder;
 }
 
+function githubRepository() {
+  const { getAll, getParam, setParams } = store({
+    owner: null,
+    repo: null,
+    type: "readme"
+  });
+  const returnBuilder = () => builder;
+  const setter = (field) => compose(returnBuilder, setParams, objOf(field));
+
+  const getRepoFetcher = pipe(
+    () => `${getParam("owner")}/${getParam("repo")}/${getParam("type")}`,
+    concat(`https://api.github.com/repos/`),
+    fetchJSON({})
+  );
+
+  var builder = {
+    fetch: getRepoFetcher,
+    owner: setter("owner"),
+    repo: setter("repo"),
+    read: compose(returnBuilder, (fn) => fn(getAll()))
+  };
+
+  return builder;
+}
+
 const formatReposList = pipe(
   prop("items"),
   map(pick(["id", "owner", "name", "description", "stargazers_count"])),
   map(over(lensProp("owner"), prop("login")))
 );
 
-export { githubQueryBuilder, formatReposList };
+export { githubSearch, githubRepository, formatReposList };
