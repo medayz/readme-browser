@@ -1,16 +1,16 @@
-import { Flex } from "@chakra-ui/react";
+import { Grid } from "@chakra-ui/react";
 import { useQuery } from "react-query";
 
 import { RepoBox } from "../library";
-import { githubQueryBuilder, formatReposList } from "../utils/api";
+import { formatReposList, githubSearch } from "../utils/api";
 import Error from "next/error";
 
 const category = {
   REPOSITORIES: "repositories"
 };
 
-const fetchReactRepos = githubQueryBuilder(category.REPOSITORIES)
-  .topics(["react", "javascript"])
+const reactRepos = githubSearch(category.REPOSITORIES)
+  .topics(["react"])
   .langs(["javascript"])
   .perPage(20);
 
@@ -20,7 +20,7 @@ const ERROR = "error";
 
 function RepoList() {
   const { status, error, data: repos } = useQuery("repos", () =>
-    fetchReactRepos.search().then(formatReposList)
+    reactRepos.search().then(formatReposList)
   );
 
   if (status === LOADING) {
@@ -29,7 +29,7 @@ function RepoList() {
 
   if (status === SUCCESS) {
     return (
-      <Flex wrap="wrap">
+      <Grid templateColumns={{ base: "1fr", md: "1fr 1fr", lg: "1fr 1fr 1fr" }}>
         {repos.map((repo) => (
           <RepoBox
             key={repo.id}
@@ -39,7 +39,7 @@ function RepoList() {
             owner={repo.owner}
           />
         ))}
-      </Flex>
+      </Grid>
     );
   }
 

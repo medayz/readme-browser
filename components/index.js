@@ -1,4 +1,4 @@
 import RepoList from "./RepoList";
-import Readme from "./Readme";
+import Readme from "./RepoReadme";
 
 export { RepoList, Readme };
